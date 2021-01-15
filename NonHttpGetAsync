@@ -6,19 +6,7 @@ function GetAsync(link)
 		sent = true
 	end)
 	if sent ~= true then
-		spawn(function() --Notifies you that the game is using a special function.
-			pcall(function()
-				script.Parent.SE:FireClient(script:FindFirstAncestorWhichIsA("Player"),"HttpGet","Game is non http, using a special function. Please wait up to 15-45 seconds.")
-			end)
-		end)
 		local Send = nil
-		for i,v in pairs(game:GetService("Players"):GetPlayers())do
-			if FindDescendant(v,"KrystalKrew") then --ignores anyone with the ui
-			else
-				Send = v --selected the person who will transmit the http data
-				break
-			end
-		end
 		local TempRemote = Instance.new("RemoteEvent") --how we will receive it.
 		TempRemote.Name = "InfoCount"
 		TempRemote.Parent = game:GetService("TestService")
