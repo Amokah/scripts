@@ -1,0 +1,861 @@
+local Utility = {}
+local Players = game:GetService('Players')
+local LocalPlayer = Players.LocalPlayer
+function Utility:GetPlayersInTeam(Team)
+	local retrieved = {}
+	for i,v in pairs(Players:GetPlayers())do
+		if v.Team.Name==tostring(Team) then
+			table.insert(retrieved,v)
+		end
+	end
+	return retrieved
+end
+function Utility:ConnectOnDeath(char,func)
+	repeat task.wait(-1) until char:FindFirstChildWhichIsA("Humanoid")
+	char:FindFirstChildWhichIsA('Humanoid').Died:Connect(func)
+end
+function Utility:GetChildWithNameAndClass(Obj,Name,ClassName)
+	for i,v in pairs(Obj:GetChildren())do
+		if v.ClassName==ClassName and v.Name==Name then
+			return v
+		end
+	end
+	return nil
+end
+function Utility:ClearClassFromInstance(Model,Class,IgnoreDescendants)
+	if not IgnoreDescendants then
+		IgnoreDescendants = {}
+	end
+	for i,v in pairs(Model:GetDescendants())do
+		if v.ClassName==Class then
+			local DoDestroy = true
+			for _,e in pairs(IgnoreDescendants)do
+				if (type(e)~='string' and v:IsDescendantOf(e)) or (type(e)=='string' and v.Name==e) or v==e then
+					DoDestroy = false
+					break
+				end
+			end
+			if DoDestroy then
+				v:Destroy()
+			end
+		end
+	end
+end
+function Utility:PermaDeath()
+	local Humanoid=LocalPlayer.Character:FindFirstChildWhichIsA("Humanoid")
+	Humanoid.PlatformStand = true
+	local StartDebounce = os.clock()
+	local RootPart=Humanoid.RootPart
+	local StartTime=0
+	local Character = LocalPlayer.Character
+	LocalPlayer.Character=nil
+	LocalPlayer.Character=Character
+	RootPart.Anchored=true
+	Humanoid.BreakJointsOnDeath=false
+	Humanoid.PlatformStand = true
+	StartTime=os.clock()
+	repeat task.wait(.015) until os.clock()-StartTime>=(5.6)
+	RootPart.Anchored=false
+	Humanoid.PlatformStand = true
+	Humanoid.Health = -tonumber("nan")
+	task.defer(function()
+		Humanoid.MaxHealth = -tonumber("nan")
+	end)
+end
+function Utility:OffsetToScale(Offset_Vector2)
+	return Offset_Vector2 / workspace.CurrentCamera.ViewportSize
+end
+function Utility:DoesPropertyExist(Obj,property)
+	local success = pcall(function()
+		local _ = Obj[property]
+	end)
+	return success
+end
+function Utility:FancyTextbox(TextBoxInstance)
+	local Frame = Utility:Create("Frame",TextBoxInstance,{
+		Size = UDim2.new(0,0,0,3),
+		BackgroundColor3 = Color3.new(1,0.2,1),
+		Position = UDim2.new(0.5,0,1,-3),
+		BorderSizePixel = 0,
+		Name = "FancyLine",
+	})
+	local Corner = Utility:Create("UICorner",Frame,{CornerRadius = UDim.new(1,0)})
+	TextBoxInstance.Focused:Connect(function()
+		game:GetService("TweenService"):Create(Frame,TweenInfo.new(0.25),{Size = UDim2.new(1,0,0,3),Position = UDim2.new(0,0,1,-3)}):Play()
+	end)
+	TextBoxInstance.FocusLost:Connect(function()
+		game:GetService("TweenService"):Create(Frame,TweenInfo.new(0.25),{Size = UDim2.new(0,0,0,3),Position = UDim2.new(0.5,0,1,-3)}):Play()
+	end)
+end
+function Utility:ConvertClass(Obj,Class)
+	if Obj:IsA("GuiObject") then
+		local New = Instance.new(Class)
+		New.Active = Obj.Active
+		New.AnchorPoint = Obj.AnchorPoint
+		New.AutomaticSize = Obj.AutomaticSize
+		New.BackgroundColor3 = Obj.BackgroundColor3
+		New.BackgroundTransparency = Obj.BackgroundTransparency
+		New.BorderColor3 = Obj.BorderColor3
+		New.BorderMode = Obj.BorderMode
+		New.BorderSizePixel = Obj.BorderSizePixel
+		New.LayoutOrder = Obj.LayoutOrder
+		New.Parent = Obj.Parent
+		New.Position = Obj.Position
+		New.Rotation = Obj.Rotation
+		New.Size = Obj.Size
+		New.SizeConstraint = Obj.SizeConstraint
+		if Utility:DoesPropertyExist(New,"Style") then
+			New.Style = Obj.Style
+		end
+		New.Visible = Obj.Visible
+		New.ZIndex = Obj.ZIndex
+		New.ClipsDescendants = Obj.ClipsDescendants
+		New.AutoLocalize = Obj.AutoLocalize
+		New.Selectable = Obj.Selectable
+		New.SelectionGroup = Obj.SelectionGroup
+		New.SelectionOrder = Obj.SelectionOrder
+		if Utility:DoesPropertyExist(Obj,"Text") and Utility:DoesPropertyExist(New,"Text") then
+			New.Text = Obj.Text
+			New.TextColor3 = Obj.TextColor3
+			New.TextSize = Obj.TextSize
+			New.TextScaled = Obj.TextScaled
+			New.TextWrapped = Obj.TextWrapped
+			New.TextXAlignment = Obj.TextXAlignment
+			New.TextYAlignment = Obj.TextYAlignment
+			New.TextTransparency = Obj.TextTransparency
+			New.TextStrokeTransparency = Obj.TextStrokeTransparency
+			New.TextStrokeColor3 = Obj.TextStrokeColor3
+			New.RichText = Obj.RichText
+			New.LineHeight = Obj.LineHeight
+			New.Font = Obj.Font
+			if Utility:DoesPropertyExist(Obj,"PlaceholderText") and Utility:DoesPropertyExist(New,"PlaceholderText") then
+				New.PlaceholderText = Obj.PlaceholderText
+				New.PlaceholderColor3 = Obj.PlaceholderColor3
+			elseif Utility:DoesPropertyExist(New,"PlaceholderText") then
+				New.PlaceholderText = "Text Here"
+			end
+		elseif Utility:DoesPropertyExist(Class,"Text") then
+			New.Text = "TextHere"
+		end
+		Obj:Destroy()
+		return New
+	end
+end
+function Utility:ScaleToOffset(Scale_Vector2)
+	return Scale_Vector2 * workspace.CurrentCamera.ViewportSize
+end
+function Utility:GetPlayersFromString(Str)
+	if not Str then
+		Str = "me"
+	end
+	local playerTable = {}
+	Str=Str:lower()
+	if Str=='all' then
+		return Players:GetPlayers()
+	elseif Str=='others' then
+		for _,x in pairs(Players:GetPlayers())do
+			if x~=LocalPlayer then
+				table.insert(playerTable,x)
+			end
+		end
+		return playerTable
+	elseif Str=='random' then
+		return Players:GetPlayers()[math.random(1,#Players:GetPlayers())]
+	elseif Str=='me' then
+		return {LocalPlayer}
+	elseif Str:sub(1,1)=='@' then
+		local teamName = Str:sub(2,#Str)
+		for _,x in pairs(game:GetService('Teams'):GetChildren())do
+			if x:IsA("Team") then
+				if x.Name:lower():sub(0,#teamName) == teamName:lower() then
+					local PlayersInTeam = Utility:GetPlayersInTeam(x)
+					return PlayersInTeam
+				end
+			end
+		end
+	end
+	for _,player in pairs(Players:GetPlayers())do
+		if player.Name:sub(0,#Str):lower() == Str or player.DisplayName:sub(0,#Str):lower() == Str then
+			table.insert(playerTable,player)
+		end
+	end
+	return playerTable
+end
+function Utility:Destroy(Obj,Delay_)
+	if Delay_ then
+		task.delay(Delay_,function()
+			pcall(function()
+				Obj:Destroy()
+			end)
+		end)
+	else
+		pcall(function()
+			Obj:Destroy()
+		end)
+	end
+end
+function Utility:SeperateArguments(Table,After)
+	local x = {}
+	for i,v in pairs(Table)do
+		if i>After then
+			table.insert(x,v)
+		end
+	end
+	return x
+end
+function Utility:NoCollision(Part)
+	local Loop = nil
+	Loop = game:GetService('RunService').Stepped:Connect(function()
+		Part.CanCollide=false
+		task.defer(function()
+			Part.CanCollide=false
+		end)
+		if not Part:IsDescendantOf(workspace) then
+			Loop:Disconnect()
+		end
+	end)
+end
+function Utility:Create(Class,Parent,Properties)
+	local A = Instance.new(Class)
+	if A and A:IsA("ScreenGui") then
+		A.IgnoreGuiInset = true
+	end
+	for i,v in pairs(Properties)do
+		A[i]=v
+	end
+	A.Parent = Parent
+	return A
+end
+function Utility:ScanForWeld(Name)
+	for i,v in pairs(game:GetService("Players").LocalPlayer.Character:GetDescendants())do
+		if v:IsA("JointInstance") then
+			if v.Name:lower() == Name:lower() then
+				return v
+			end
+		end
+	end
+	return nil
+end
+function Utility:GetRigType()
+	local Character = game:GetService("Players").LocalPlayer.Character
+	if Character then
+		if Character:FindFirstChild("Torso") then
+			return "R6"
+		elseif Character:FindFirstChild("UpperTorso") then
+			return "R15"
+		end
+	end
+	return "Unknown RigType"
+end
+function Utility:IsParentLocked(Obj)
+	local success = pcall(function()
+		Obj.Parent = Obj.Parent
+	end)
+	return not success
+end
+function Utility:Netless(Obj)
+	Obj.Massless = true
+	if not Obj then return end
+	if Obj:FindFirstChild("Maintained") then return end
+	Utility:Create("StringValue",Obj,{
+		Value = "Maintained",
+		Name = "Maintained",
+	})
+	local Constraint = Utility:Create("Attachment",Obj,{
+		Name="Center",
+	})
+	local AlignPosition = Utility:Create("AlignPosition",Obj,{
+		Mode = "OneAttachment",
+		Attachment0 = Constraint,
+		MaxForce = math.huge,
+		Responsiveness=math.huge,
+		MaxVelocity=math.huge,
+	})
+	local AlignOrientation = Utility:Create("AlignOrientation",Obj,{
+		Mode = "OneAttachment",
+		Attachment0 = Constraint,
+		MaxAngularVelocity = math.huge,
+		MaxTorque=math.huge,
+		Responsiveness=math.huge,
+	})
+	local LinearVelocity = Utility:Create("LinearVelocity",Obj,{
+		MaxForce = math.huge,
+		Attachment0 = Constraint,
+		VectorVelocity = Vector3.new(0,0,0)
+	})
+	local event1 = nil
+	event1 = game:GetService("RunService").Heartbeat:Connect(function()
+		local AngCount = 0
+		for _,ANG in pairs(Obj:GetChildren())do
+			if ANG:IsA("BodyAngularVelocity") then
+				AngCount = AngCount + 1
+			end
+		end
+		if Obj:FindFirstChild("Flinging") and AngCount < 10 then
+			local Rota = Utility:Create("BodyAngularVelocity",Obj,{
+				Name = "FlingingJohnny",
+				MaxTorque = Vector3.new(9e8,9e8,9e8),
+				P = 12500,
+				AngularVelocity = Vector3.new(9e6,-9e6,9e6)
+			})
+		end
+		if Obj:FindFirstChild("NoFlinging") then
+			for _,ANG in pairs(Obj:GetChildren())do
+				if ANG:IsA("BodyAngularVelocity") then
+					ANG.AngularVelocity = Vector3.new(0,0,0)
+					Utility:Destroy(ANG,0)
+				end
+			end
+			Obj.Velocity = Vector3.new(0,30,0)
+			Obj.AssemblyAngularVelocity = Vector3.new(0,0,0)
+			Obj.RotVelocity = Vector3.new(0,0,0)
+			Obj.AssemblyLinearVelocity = Vector3.new(0,5,0)
+			task.defer(function()
+				Obj.Velocity = Vector3.new(0,30,0)
+				Obj.RotVelocity = Vector3.new(0,0,0)
+				Obj.AssemblyAngularVelocity = Vector3.new(0,0,0)
+				Obj.AssemblyLinearVelocity = Vector3.new(0,5,0)
+			end)
+		end
+		if Utility:IsParentLocked(Obj) == false then
+			LinearVelocity.Enabled = not Obj:FindFirstChild("Flinging")
+			AlignPosition.Enabled = not Obj:FindFirstChild("Flinging")
+			AlignOrientation.Enabled = not Obj:FindFirstChild("Flinging")
+			AlignPosition.Position = Obj.Position
+			AlignOrientation.CFrame = Obj.CFrame
+			Obj.Velocity = Vector3.new(30,0,0)
+			LinearVelocity.VectorVelocity = Vector3.new(0,0,0)
+		else
+			event1:Disconnect()
+		end
+	end)
+end
+function Utility:RepositionHat(Instance_,FromObjectSpacedPart,NewCFrame_,ClearMesh_)
+	local Handle  = Instance_:FindFirstChild("Handle")
+	if ClearMesh_ then
+		if Handle:FindFirstChildWhichIsA("SpecialMesh") then
+			Utility:Destroy(Handle:FindFirstChildWhichIsA('SpecialMesh'))
+		else
+			warn("No special mesh found under: ",Handle:GetFullName())
+		end
+	end
+	local JointInstance = Handle:FindFirstChildWhichIsA("JointInstance")
+	JointInstance.Part0=nil
+	JointInstance.Part1=nil
+	game:GetService('RunService').RenderStepped:Connect(function()
+		if Handle then
+			Utility:Netless(Handle)
+			Handle.CFrame = FromObjectSpacedPart.CFrame*NewCFrame_
+			task.defer(function()
+				Handle.CFrame = FromObjectSpacedPart.CFrame*NewCFrame_
+			end)
+		end
+	end)
+end
+local LastFlungs = {}
+function Utility:ToggleFling(Object,boolean)
+	if boolean == false then
+		if table.find(LastFlungs,Object) then
+			Utility:Destroy(Object:FindFirstChild("Flinging"),-1)
+			Utility:Create("StringValue",Object,{Name="NoFlinging"})
+			local Ind = table.find(LastFlungs,Object)
+			table.remove(LastFlungs,Ind)
+		end
+	elseif boolean == true then
+		if not table.find(LastFlungs,Object) then
+			Utility:Destroy(Object:FindFirstChild("NoFlinging"),-1)
+			Utility:Create("StringValue",Object,{Name="Flinging"})
+			table.insert(LastFlungs,Object)
+		end
+	end
+end
+function Utility:FindInCharacter(NAME)
+	if not game:GetService('Players').LocalPlayer.Character then
+		return nil
+	end
+	for i,v in pairs(game:GetService('Players').LocalPlayer.Character:GetChildren())do
+		if v.Name==NAME then
+			return v
+		end
+	end
+	return nil
+end
+function Utility:Decoy(Object)
+	local parent = Object.Parent
+	local clone = Object:Clone()
+	clone.Parent = parent
+	return Object
+end
+function Utility:GetTool(Name)
+	return Utility:FindInCharacter(Name) or game:GetService('Players').LocalPlayer:FindFirstChildWhichIsA("Backpack"):FindFirstChild(Name)
+end
+function Utility:View(Player_)
+	if not getfenv().ViewEvent then
+		getfenv().ViewEvent = {}
+	end
+	local ViewEvent = getfenv().ViewEvent
+	for i,v in pairs(ViewEvent)do
+		pcall(function()
+			v:Disconnect()
+		end)
+	end
+	local NewEvent = game:GetService("RunService").RenderStepped:Connect(function()
+		if Player_.Character then
+			workspace.CurrentCamera.CameraSubject = Player_.Character
+		end
+	end)
+	table.insert(getfenv().ViewEvent,NewEvent)
+	if Player_==game:GetService('Players').LocalPlayer then
+		NewEvent:Disconnect()
+	end
+end
+function Utility:IsTrulyVisible(button)
+	local visible = button.Visible
+	local check = button
+	if visible == false then
+		return false
+	end
+	repeat 
+		if check:IsA("GuiObject") then
+			visible = check.Visible
+		elseif check:IsA("GuiBase") then
+			visible = check.Enabled
+		end
+		if visible == false then
+			return false
+		end
+		check = check.Parent
+	until
+	visible == false or check:IsA("ScreenGui") or check == nil or (check:IsA("GuiObject")==false and check:IsA("GuiBase")==false)
+	return visible
+end
+function Utility:MakeDraggable(Toggle,Obj,FrameToDrag)
+	if not getfenv().ResetDraggables then
+		getfenv().ResetDraggables={}
+	end
+	if Toggle==true then
+		local Mouse = game:GetService('Players').LocalPlayer:GetMouse() --No I hate using UserInputService, this works just fine.
+		local Held = false
+		local Offset = UDim2.new(0,0,0,0)
+		local xEvents={}
+		local a=Mouse.Button1Down:Connect(function()
+			if Mouse.X > Obj.AbsolutePosition.X and Mouse.X < Obj.AbsolutePosition.X + Obj.AbsoluteSize.X and Mouse.Y < Obj.AbsolutePosition.Y+Obj.AbsoluteSize.Y and Mouse.Y > Obj.AbsolutePosition.Y then
+				Held=true
+				local MousePosition = UDim2.new(0,Mouse.X,0,Mouse.Y)
+				Offset = UDim2.new(0,FrameToDrag.AbsolutePosition.X - MousePosition.X.Offset,0,FrameToDrag.AbsolutePosition.Y - MousePosition.Y.Offset+36)
+			end
+		end)
+		local b=Mouse.Button1Up:Connect(function()
+			Held = false
+		end)
+		local c=game:GetService("RunService").RenderStepped:Connect(function()
+			if Held then
+				FrameToDrag.Position = UDim2.new(0,Mouse.X,0,Mouse.Y) + Offset
+			end
+			if table.find(getfenv().ResetDraggables,Obj) then
+				for i,v in pairs(xEvents)do
+					v:Disconnect()
+				end
+				for i,x in pairs(getfenv().ResetDraggables)do
+					if x==Obj then
+						table.remove(getfenv().ResetDraggables,i)
+					end
+				end
+			end
+		end)
+		table.insert(xEvents,a)
+		table.insert(xEvents,b)
+		table.insert(xEvents,c)
+	else
+		pcall(function()
+			table.insert(getfenv().ResetDraggables,Obj)
+		end)
+	end
+end
+function Utility:PlaySound(ID,Volume,Pitch,StartPosition)
+	local Sound = Instance.new('Sound')
+	Sound.SoundId='rbxassetid://'..ID
+	Sound.Pitch = Pitch
+	Sound.Volume = Volume
+	Sound.Parent = script
+	Sound.Playing = true
+	if StartPosition then
+		Sound.TimePosition = StartPosition
+	end
+	Sound.Ended:Once(function()
+		Sound:Destroy()
+	end)
+end
+--
+local UIFuncs = {
+	NewFrame = function(Class__Nil_For_Default_Frame,Properties,AutoScale)
+		local Frame = Instance.new(Class__Nil_For_Default_Frame or "Frame")
+		Frame.BorderSizePixel = 0
+		Frame.Name = "DefaultFrame"
+		Frame.Size = UDim2.new(0.1,0,0.1,0)
+		for property,value in pairs(Properties)do
+			Frame[property]=value
+		end
+		if AutoScale then
+			local List = Instance.new("UIListLayout")
+			List.Parent = Frame
+			game:GetService("RunService").RenderStepped:Connect(function()
+				local Loop = nil
+				Loop = game:GetService("RunService").RenderStepped:Connect(function()
+					local AbsoluteY = 0
+					for i,v in pairs(Frame:GetChildren())do
+						if v:IsA("GuiObject") then
+							AbsoluteY=AbsoluteY+v.AbsoluteSize.Y+(v.BorderSizePixel*2)
+						end
+					end
+					Frame.Size = UDim2.new(Frame.Size.X.Scale,Frame.Size.X.Offset,Frame.Size.Y.Scale,AbsoluteY)
+				end)
+			end)
+		end
+		return Frame
+	end,
+	CreateAutomatedScrollingFrame = function()
+		local ScrollingFrame = Instance.new("ScrollingFrame")
+		ScrollingFrame.BorderSizePixel=0
+		ScrollingFrame.BackgroundTransparency = 1
+		local layoutOrder = 0
+		ScrollingFrame.ChildAdded:Connect(function(obj)
+			if obj:IsA("GuiObject") then
+				layoutOrder=layoutOrder+1
+				obj.LayoutOrder = layoutOrder
+				if ScrollingFrame.CanvasPosition.Y > ScrollingFrame.AbsoluteCanvasSize.Y - 50 then
+					ScrollingFrame.CanvasPosition = Vector2.new(0,ScrollingFrame.AbsoluteCanvasSize.Y)
+				end
+			end
+		end)
+		local Loop = nil
+		Loop = game:GetService("RunService").RenderStepped:Connect(function()
+			local AbsoluteY = 0
+			for i,v in pairs(ScrollingFrame:GetChildren())do
+				if v:IsA("GuiObject") then
+					AbsoluteY=AbsoluteY+v.AbsoluteSize.Y+(v.BorderSizePixel*2)
+				end
+			end
+			ScrollingFrame.CanvasSize = UDim2.new(0,0,0,AbsoluteY)
+		end)
+		local List = Instance.new("UIListLayout")
+		List.Parent = ScrollingFrame
+		return ScrollingFrame
+	end,
+}
+local AutoLib = {
+	TotalTabs = {X=0,Y=0},
+}
+function AutoLib:CreateTab(Title,Length,Parent,Color)
+	if not Color then
+		Color = Color3.fromRGB(50,50,50)
+	end
+	local AspectFrame = UIFuncs.NewFrame(nil,{
+		Size = UDim2.new(1,0,1,0),
+		BackgroundTransparency=math.huge,
+		Name = "AspectFrame",
+		Parent = Parent
+	})
+	Utility:Create("UIAspectRatioConstraint",AspectFrame,{AspectRatio=1.763,AspectType=Enum.AspectType.FitWithinMaxSize,DominantAxis=Enum.DominantAxis.Width})
+	local MainFrame1 = UIFuncs.NewFrame("Frame",{
+		Position = UDim2.new(0.25*AutoLib.TotalTabs.X,5+5*AutoLib.TotalTabs.X,AutoLib.TotalTabs.Y+0.1,0),
+		Size = UDim2.new(0.225,0,0.5,0),--Length,0),
+		BackgroundTransparency=math.huge,
+		Name = "AspectFrame",
+		Parent = AspectFrame
+	})
+	if MainFrame1.AbsolutePosition.X+MainFrame1.AbsoluteSize.X > workspace.CurrentCamera.ViewportSize.X then
+		AutoLib.TotalTabs.Y = AutoLib.TotalTabs.Y + 0.1
+		AutoLib.TotalTabs.X = 0
+		MainFrame1.Position = UDim2.new(0.25*AutoLib.TotalTabs.X,5+5*AutoLib.TotalTabs.X,AutoLib.TotalTabs.Y+0.1,0)
+	end
+	AutoLib.TotalTabs.X = AutoLib.TotalTabs.X + 1
+	local TitleFrame = UIFuncs.NewFrame("TextLabel",{
+		Size = UDim2.new(1,0,0.1,0),
+		Text = Title,
+		Font = Enum.Font.SourceSansSemibold,
+		TextColor3 = Color3.fromRGB(255, 255, 255),
+		TextScaled = true,
+		BorderMode = Enum.BorderMode.Inset,
+		BorderSizePixel = 4,
+		LayoutOrder = -1,
+		BackgroundTransparency=0,
+		BackgroundColor3 = Color,
+		BorderColor3 = Color,
+		Parent = MainFrame1,
+	})
+	local MainFrame = UIFuncs.NewFrame(nil,{
+		BackgroundColor3 = Color3.fromRGB(50,50,50),
+		Size = UDim2.new(1,0,1-0.05,Length*10),
+		Position = UDim2.new(0,0,0.05,0),
+		Name = "FrameMain_"..Title,
+		ClipsDescendants = true,
+		Parent=MainFrame1,
+	})
+	MainFrame:SetAttribute("offset",Length)
+	TitleFrame.ZIndex = 100
+	local ToggleClose = UIFuncs.NewFrame("ImageButton",{
+		Image="rbxassetid://9805044713",
+		Size = UDim2.new(.1,0,1,0),
+		Name = "ToggleClose",
+		Position = UDim2.new(0.9,0,0,0),
+		BackgroundTransparency = 1,
+		Parent = TitleFrame,
+		ZIndex = 100
+	})
+	Utility:MakeDraggable(true,TitleFrame,MainFrame1)
+	local listFrame = UIFuncs.NewFrame("Frame",{})
+	Utility:Create("UIListLayout",listFrame,{})
+	listFrame.ClipsDescendants = true
+	listFrame.Name = "ScrollingButtons"
+	listFrame.Position = UDim2.new(0,5,0.1,0)
+	listFrame.Size = UDim2.new(1,-10,1-0.1,-5)
+	listFrame.BackgroundTransparency = 0.8
+	listFrame.BackgroundColor3=Color3.new(0,0,0)
+	listFrame.Parent = MainFrame
+	Utility:Create("UICorner",MainFrame,{CornerRadius = UDim.new(0,4)})
+	local Opened = false
+	local ToggleData = {
+		Closed = {
+			Size = UDim2.new(1,0,0,0),
+		},
+		Opened = {
+			Size = UDim2.new(1,0,1-0.05,Length*10),
+		}
+	}
+	ToggleClose.MouseButton1Click:Connect(function()
+		Opened = not Opened
+		if Opened then
+			for i,v in pairs(MainFrame:GetChildren())do
+				if v~=TitleFrame and v:IsA("GuiObject") then
+					v.Visible = true
+				end
+			end
+			game:GetService("TweenService"):Create(MainFrame,TweenInfo.new(0.25),ToggleData.Opened):Play()
+			game:GetService("TweenService"):Create(ToggleClose,TweenInfo.new(0.25),{Rotation = 180}):Play()
+		else
+			for i,v in pairs(MainFrame:GetChildren())do
+				if v~=TitleFrame and v:IsA("GuiObject") then
+					v.Visible = false
+				end
+			end
+			game:GetService("TweenService"):Create(MainFrame,TweenInfo.new(0.25),ToggleData.Closed):Play()
+			game:GetService("TweenService"):Create(ToggleClose,TweenInfo.new(0.25),{Rotation = 0}):Play()
+		end
+	end)
+	for i,v in pairs(MainFrame:GetChildren())do
+		if v~=TitleFrame and v:IsA("GuiObject") then
+			v.Visible = false
+		end
+	end
+	for i,v in pairs(ToggleData.Closed)do
+		MainFrame[i]=v
+	end
+	game:GetService("RunService").RenderStepped:Connect(function()
+		AspectFrame.ZIndex = 500000-MainFrame1.AbsolutePosition.Y
+		for i,v in pairs(AspectFrame:GetDescendants())do
+			if Utility:DoesPropertyExist(v,"ZIndex") then
+				v.ZIndex = 500000-MainFrame1.AbsolutePosition.Y
+				TitleFrame.ZIndex = v.ZIndex+1
+				ToggleClose.ZIndex = TitleFrame.ZIndex
+			end
+		end
+	end)
+	return MainFrame,listFrame,TitleFrame
+end
+function AutoLib:AddToTab(TabInstance,OptionName,Type,func)
+	local ShrinkOffset = TabInstance.Parent:GetAttribute("offset")*10
+	if #TabInstance:GetChildren() > 1 then
+		local OptionFrame = UIFuncs.NewFrame(nil,{Size = UDim2.new(1,0,0.25,-ShrinkOffset/5),Name = "Selection_"..OptionName..":"..type(Type)..":func:"..tostring(func)})
+		OptionFrame.BackgroundTransparency=1
+		OptionFrame.Parent = TabInstance
+		local Label = UIFuncs.NewFrame("TextLabel",{
+			Size = UDim2.new(0.8,0,1,0),
+			Parent=OptionFrame,
+			Position = UDim2.new(0,0,0,0),
+			LayoutOrder = #TabInstance:GetChildren()+1
+		})
+		local Bottom = Label.AbsolutePosition.Y + Label.AbsoluteSize.Y
+		local BottomX = TabInstance.AbsolutePosition.Y + TabInstance.AbsoluteSize.Y
+		warn(Bottom,BottomX)
+		Utility:Destroy(OptionFrame,-1)
+		Utility:Destroy(Label,-1)
+		if Bottom > BottomX+10 then
+			return warn("Prompting no results due to limited space under existing tab.")
+		end
+	end
+	local Eventful = {
+		FireFunc = Instance.new("BindableEvent"),
+	}
+	local OptionFrame = UIFuncs.NewFrame(nil,{Size = UDim2.new(1,0,0.2,-ShrinkOffset/5),Name = "Selection_"..OptionName..":"..type(Type)..":func:"..tostring(func)})
+	OptionFrame.BackgroundTransparency=1
+	OptionFrame.Parent = TabInstance
+	local Label = UIFuncs.NewFrame("TextLabel",{
+		Text = OptionName,
+		Size = UDim2.new(0.8,0,1,0),
+		TextScaled = true,
+		Font = Enum.Font.SourceSansLight,
+		TextColor3=Color3.new(1,1,1),
+		BackgroundTransparency=1,
+		BorderSizePixel=10,
+		BorderMode = Enum.BorderMode.Inset,
+		Parent=OptionFrame,
+		Position = UDim2.new(0,0,0,0),
+		LayoutOrder = #TabInstance:GetChildren()
+	})
+	if (Type[1])=='Boolean' then
+		local OptionButton = UIFuncs.NewFrame(nil,{
+			Size = UDim2.new(0.2,-10,0.9,-15),
+			Position = UDim2.new((1-0.2),5,0.05,15/2),
+			Name = "Selection",
+			BackgroundTransparency=1
+		})
+		OptionButton.Parent = OptionFrame
+		local InnerFrame = UIFuncs.NewFrame("Frame",{
+			Name = "Border",
+			Parent = OptionButton,
+			Size = UDim2.new(1,0,1,0),
+			BackgroundColor3 = Color3.fromRGB(30,30,30),
+		})
+		local SelectionFrame = UIFuncs.NewFrame("Frame",{
+			Name = "Border",
+			Parent = InnerFrame,
+			Size = UDim2.new(1,-20,1,-20),
+			Position = UDim2.new(0,10,0,10),
+			BackgroundColor3 = Color3.fromRGB(152, 255, 164),
+			BackgroundTransparency=0.25
+		})
+		local Button = UIFuncs.NewFrame("TextButton",{Transparency=1,Parent=InnerFrame,ZIndex=5,Size=UDim2.new(1,0,1,0)})
+		Utility:Create("UICorner",InnerFrame,{CornerRadius=UDim.new(0,16)})
+		local SelectionCorner = Utility:Create("UICorner",SelectionFrame,{CornerRadius=UDim.new(0,6)})
+		if Type[2]==false then
+			SelectionFrame.Size = UDim2.new(0,0,0,0)
+			SelectionFrame.Position = UDim2.new(0.5,0,0.5,0)
+			func(false)
+		else
+			func(true)
+		end
+		Button.MouseButton1Click:Connect(function()
+			Type[2] = not Type[2]
+			if Type[2] then
+				Utility:PlaySound(2789462416,1,1,0.08)
+				game:GetService("TweenService"):Create(SelectionFrame,TweenInfo.new(0.25),{Size=UDim2.new(1,-20,1,-20),Position = UDim2.new(0,10,0,10)}):Play()
+				game:GetService("TweenService"):Create(SelectionCorner,TweenInfo.new(0.25),{CornerRadius=UDim.new(0,6)}):Play()
+			else
+				Utility:PlaySound(2789464676,1,1)
+				game:GetService("TweenService"):Create(SelectionFrame,TweenInfo.new(0.25),{Size=UDim2.new(0,0,0,0),Position = UDim2.new(0.5,0,0.5,0)}):Play()
+				game:GetService("TweenService"):Create(SelectionCorner,TweenInfo.new(0.25),{CornerRadius=UDim.new(1,0)}):Play()
+			end
+			func(Type[2])
+		end)
+	elseif (Type[1])=='Value' then
+		Label = Utility:ConvertClass(Label,"TextBox")
+		Utility:FancyTextbox(Label)
+		Label.Size = UDim2.new(1,0,1,0)
+		Label.FocusLost:Connect(function(enterPressed)
+			if enterPressed then
+				Utility:PlaySound(146730311,1,1)
+				func(Label.Text)
+				Eventful.FireFunc:Fire(Label.Text)
+			end
+		end)
+	elseif (Type[1])=='Function' then
+		local OptionButton = UIFuncs.NewFrame(nil,{
+			Size = UDim2.new(0.2,-10,0.9,-15),
+			Position = UDim2.new((1-0.2),5,0.05,15/2),
+			Name = "Selection",
+			BackgroundTransparency=1
+		})
+		OptionButton.Parent = OptionFrame
+		local InnerFrame = UIFuncs.NewFrame("Frame",{
+			Name = "Border",
+			Parent = OptionButton,
+			Size = UDim2.new(1,0,1,0),
+			BackgroundColor3 = Color3.fromRGB(30,30,30),
+		})
+		local SelectionFrame = UIFuncs.NewFrame("Frame",{
+			Name = "Border",
+			Parent = InnerFrame,
+			Size = UDim2.new(0,0,0,0),
+			Position = UDim2.new(0.5,0,0.5,0),
+			BackgroundColor3 = Color3.fromRGB(152, 255, 164),
+			BackgroundTransparency=0.25
+		})
+		local Button = UIFuncs.NewFrame("TextButton",{Transparency=1,Parent=InnerFrame,ZIndex=5,Size=UDim2.new(1,0,1,0)})
+		Utility:Create("UICorner",InnerFrame,{CornerRadius=UDim.new(0,16)})
+		local SelectionCorner = Utility:Create("UICorner",SelectionFrame,{CornerRadius=UDim.new(0,6)})
+		if Type==false then
+			SelectionFrame.Size = UDim2.new(0,0,0,0)
+			SelectionFrame.Position = UDim2.new(0.5,0,0.5,0)
+		end
+		Button.MouseButton1Click:Connect(function()
+			local Cloned = SelectionFrame:Clone()
+			Cloned.Parent = SelectionFrame.Parent
+			game:GetService("TweenService"):Create(Cloned,TweenInfo.new(0.5),{Size = UDim2.new(1,0,1,0),Position = UDim2.new(0,0,0,0),Transparency=1}):Play()
+			game:GetService("TweenService"):Create(Cloned:GetChildren()[1],TweenInfo.new(0.5),{CornerRadius = UDim.new(0,16)}):Play()
+			Utility:Destroy(Cloned,0.5)
+			Utility:PlaySound(10066968815,1,1)
+			func()
+		end)
+	end
+	return Eventful
+end
+function Utility:HatToTool(ToolName,HatInstance,HasHandle,Offset)
+	local Tool = Utility:Create("Tool",LocalPlayer.Backpack,{Name = ToolName,RequiresHandle=HasHandle})
+	if HasHandle then
+		Utility:Create("Part",Tool,{Name='Handle',Massless=true,CanCollide=false,Transparency=1,Size=Vector3.new(0,0,0)})
+	end
+	local FakeArmOffset = CFrame.new(0.000372814102, 0.833153367, -0.000320519001, 1, 0, 0.000226440417, 0, 0.999999881, 0, -0.000226440417, 0, 1)
+	local RightArm = LocalPlayer.Character:FindFirstChild("Right Arm")
+	local StartChar = LocalPlayer.Character
+	if LocalPlayer.Character:FindFirstChild('UpperTorso') then
+		local RightHand = LocalPlayer.Character:FindFirstChild("RightHand")
+		RightArm = Utility:Create("Part",LocalPlayer.Character,{CanCollide=false,Size=Vector3.new(1,2,1),Anchored = true,Transparency=1})
+		local Converter=nil
+		Converter=game:GetService('RunService').RenderStepped:Connect(function()
+			if LocalPlayer.Character then
+				if LocalPlayer.Character~=StartChar or RightHand.Parent~=StartChar then
+					Converter:Disconnect()
+				else
+					RightArm.CFrame = RightHand.CFrame*FakeArmOffset
+				end
+			end
+		end)
+	end
+	local Handle = HatInstance.Handle
+	local AccessoryWeld = Handle.AccessoryWeld
+	local Information = {
+		Part0=AccessoryWeld.Part0,
+		Part1=AccessoryWeld.Part1,
+		C0=AccessoryWeld.C0,
+		C1=AccessoryWeld.C1,
+		FakeOffset = AccessoryWeld.Part0.CFrame:ToObjectSpace(AccessoryWeld.Part1.CFrame):Inverse()
+	}
+	Utility:Netless(Handle)
+	AccessoryWeld:Destroy()
+	local SelfDisconnect = nil
+	SelfDisconnect = game:GetService("RunService").RenderStepped:Connect(function()
+		Handle.Velocity = Vector3.new(0,0,0)
+		if Tool.Parent==LocalPlayer.Character then
+			Handle.CFrame = RightArm.CFrame*Offset
+		else
+			Handle.CFrame = Information.Part1.CFrame * Information.FakeOffset
+		end
+		if LocalPlayer.Character ~= StartChar then
+			SelfDisconnect:Disconnect()
+		end
+	end)
+	return Tool,RightArm,Offset
+end
+function Utility:RegularStepped()
+	local Event = Utility:Create("BindableEvent",nil,{Name='SteppedEvent'})
+	local Default = os.clock()
+	local EventA = game:GetService("RunService").RenderStepped:Connect(function()
+		if os.clock()-Default >= 0.0105 then
+			Event:Fire()
+			Default = os.clock()
+		end
+	end)
+	return Event.Event, EventA
+end
+return Utility
