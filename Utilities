@@ -22,6 +22,13 @@ function Utility:GetChildWithNameAndClass(Obj,Name,ClassName)
 	end
 	return nil
 end
+function Utility:BreakJoints(Obj)
+	for _,X in pairs(Obj:GetDescendants())do
+		if X:IsA("JointInstance") then
+			X:Destroy()
+		end
+	end
+end
 function Utility:ClearClassFromInstance(Model,Class,IgnoreDescendants)
 	if not IgnoreDescendants then
 		IgnoreDescendants = {}
